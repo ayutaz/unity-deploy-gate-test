@@ -164,7 +164,7 @@ jobs:
            # Xcode Archive ステップで Team ID を使うために必要
            APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          XCODE_PROJECT_PATH="${{ github.workspace }}/build/iOS/Unity-iPhone.xcodeproj"
+          XCODE_PROJECT_PATH="${{ github.workspace }}/build/iOS/iOS/Unity-iPhone.xcodeproj"
           ARCHIVE_PATH="${{ github.workspace }}/build/iOS/archive.xcarchive"
           EXPORT_PATH="${{ github.workspace }}/build/iOS/ipa"
 
