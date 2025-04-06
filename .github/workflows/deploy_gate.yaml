@@ -102,6 +102,16 @@ jobs:
           p12-password: ${{ secrets.IOS_P12_PASSWORD }}
           mobileprovision-base64: ${{ secrets.IOS_MOBILEPROVISION_BASE64 }}
 
+      
+      - name: List build output directory # ★★★ このデバッグステップを追加 ★★★
+        run: |
+          echo "Checking contents of build/iOS directory..."
+          pwd # 現在のディレクトリを確認
+          echo "Listing contents of build/ :"
+          ls -l build || echo "build directory not found."
+          echo "Listing contents of build/iOS/ :"
+          ls -lR build/iOS || echo "build/iOS directory not found or empty."
+
       # ExportOptions.plist を Secrets から動的に生成するステップ
       - name: Generate ExportOptions.plist from Secrets
         env:
