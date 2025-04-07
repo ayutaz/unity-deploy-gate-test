@@ -104,28 +104,29 @@ jobs:
           p12-password: ${{ secrets.IOS_P12_PASSWORD }}
           # mobileprovision-base64 はここでは使用しない (下記で手動インストール)
 
-      # ★★★ プロビジョニングプロファイルを手動でデコード・インストールするステップ ★★★
+      # ★★★ プロビジョニングプロファイルを手動でデコード・インストールするステップ (修正版) ★★★
       - name: Install Provisioning Profile from Secret
         env:
-          # Secret を環境変数として渡す
           MOBILEPROVISION_BASE64: ${{ secrets.IOS_MOBILEPROVISION_BASE64 }}
         run: |
           echo "Attempting to install provisioning profile manually..."
           PROF_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
           mkdir -p "$PROF_DIR" # ディレクトリが存在しない場合に作成
 
-          # Base64デコードしてファイルに書き込む (macOSのbase64は -D or --decode, runner環境のGNU coreutilsを期待して --decode を使う)
-          echo "$MOBILEPROVISION_BASE64" | base64 --decode --ignore-garbage > "$PROF_DIR/actions_profile.mobileprovision"
+          # ★★★ base64 コマンドのオプションを修正 (-D を使用し --ignore-garbage を削除) ★★★
+          echo "$MOBILEPROVISION_BASE64" | base64 -D -o "$PROF_DIR/actions_profile.mobileprovision.tmp"
 
           # ファイルが正しく作成され、中身があるか確認
-          if [ -s "$PROF_DIR/actions_profile.mobileprovision" ]; then
+          if [ -s "$PROF_DIR/actions_profile.mobileprovision.tmp" ]; then
+            mv "$PROF_DIR/actions_profile.mobileprovision.tmp" "$PROF_DIR/actions_profile.mobileprovision"
             echo "Provisioning profile installed to $PROF_DIR/actions_profile.mobileprovision"
             ls -l "$PROF_DIR" # 確認用にリスト表示
           else
-            echo "::error::Failed to decode or write provisioning profile from Base64 secret."
+            echo "::error::Failed to decode or write provisioning profile from Base64 secret (using base64 -D)."
+            rm -f "$PROF_DIR/actions_profile.mobileprovision.tmp" # 念のため一時ファイルを削除
             exit 1
           fi
-          sleep 1 # 念のため少し待機
+          sleep 1
 
       # ExportOptions.plist を Secrets から動的に生成するステップ
       - name: Generate ExportOptions.plist from Secrets
