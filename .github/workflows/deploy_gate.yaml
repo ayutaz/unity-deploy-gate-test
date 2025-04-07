@@ -168,6 +168,19 @@ jobs:
           echo "Generated ExportOptions.plist at ${PLIST_PATH}"
           echo "EXPORT_OPTIONS_PLIST_PATH=${PLIST_PATH}" >> $GITHUB_ENV
 
+
+      - name: Check Xcode Project Bundle ID
+        run: |
+          XCODE_PROJ_PATH="${{ github.workspace }}/build/iOS/iOS/Unity-iPhone.xcodeproj/project.pbxproj"
+          echo "Checking Bundle ID in ${XCODE_PROJ_PATH}"
+          if [ -f "${XCODE_PROJ_PATH}" ]; then
+            # PlistBuddy を使って PRODUCT_BUNDLE_IDENTIFIER を検索し表示 (複数ある可能性も考慮)
+            /usr/libexec/PlistBuddy -c "Print:objects:*:buildSettings:PRODUCT_BUNDLE_IDENTIFIER" "${XCODE_PROJ_PATH}" 2>/dev/null || echo "Could not read Bundle ID or not found"
+          else
+            echo "::error::project.pbxproj not found at ${XCODE_PROJ_PATH}"
+            exit 1
+          fi
+      
       - name: Build and Export .ipa
         env:
            APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
