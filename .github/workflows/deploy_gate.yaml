@@ -153,8 +153,6 @@ jobs:
           EOF
 
           echo "Generated ExportOptions.plist at ${PLIST_PATH}"
-          # echo "Content:" # デバッグ用に内容を表示する場合はコメント解除（Secret がログに出力される可能性に注意）
-          # cat "${PLIST_PATH}"
 
           # 生成した plist のパスを後続ステップ用に環境変数に設定
           echo "EXPORT_OPTIONS_PLIST_PATH=${PLIST_PATH}" >> $GITHUB_ENV
