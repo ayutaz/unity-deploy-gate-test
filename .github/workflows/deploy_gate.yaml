@@ -102,6 +102,12 @@ jobs:
           p12-password: ${{ secrets.IOS_P12_PASSWORD }}
           mobileprovision-base64: ${{ secrets.IOS_MOBILEPROVISION_BASE64 }}
 
+      - name: Check Provisioning Profiles Directory
+        run: |
+          echo "Listing installed provisioning profiles..."
+          ls -l ~/Library/MobileDevice/Provisioning\ Profiles/ || echo "Provisioning Profiles directory not found or inaccessible."
+
+
       
       - name: List build output directory # ★★★ このデバッグステップを追加 ★★★
         run: |
