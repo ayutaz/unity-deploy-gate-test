@@ -103,7 +103,6 @@ jobs:
           p12-file-base64: ${{ secrets.IOS_P12_BASE64 }}
           p12-password: ${{ secrets.IOS_P12_PASSWORD }}
 
-      # ★★★ プロビジョニングプロファイルを手動でデコード・インストールするステップ (修正版) ★★★
       - name: Install Provisioning Profile from Secret
         env:
           MOBILEPROVISION_BASE64: ${{ secrets.IOS_MOBILEPROVISION_BASE64 }}
@@ -129,7 +128,6 @@ jobs:
           fi
           sleep 1
 
-      # ExportOptions.plist を Secrets から動的に生成するステップ
       - name: Generate ExportOptions.plist from Secrets
         env:
           APPLE_TEAM_ID_SECRET: ${{ secrets.APPLE_TEAM_ID }}
@@ -219,7 +217,7 @@ jobs:
           path: ${{ env.IPA_PATH }}
 
       - name: Upload to DeployGate (iOS)
-        uses: DeployGate/deploygate-upload-github-action@v1.0.0
+        uses: DeployGate/deploygate-upload-github-action@v1.0.1
         with:
           api_token: ${{ secrets.DEPLOYGATE_API_KEY }}
           owner_name: ${{ secrets.DEPLOYGATE_USER_NAME }}
