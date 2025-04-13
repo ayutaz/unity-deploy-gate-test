@@ -216,7 +216,7 @@ jobs:
           name: Build-iOS-ipa
           path: ${{ env.IPA_PATH }}
 
-      - name: Verify IPA file exists before upload # (オプション)
+      - name: Verify IPA file exists before upload
         run: |
           echo "Checking for IPA file at: ${{ env.IPA_PATH }}"
           ls -lh ${{ env.IPA_PATH }}
@@ -225,40 +225,40 @@ jobs:
             exit 1
           fi
 
-          - name: Upload to DeployGate (iOS) using curl (DEBUG: Show API Error)
-          env:
-            DEPLOYGATE_API_KEY: ${{ secrets.DEPLOYGATE_API_KEY }}
-            DEPLOYGATE_USER_NAME: ${{ secrets.DEPLOYGATE_USER_NAME }}
-            IPA_FILE_PATH: ${{ env.IPA_PATH }}
-            UPLOAD_MESSAGE: "New iOS build from GitHub Actions (DEBUGGING)"
-          run: |
-            echo "Uploading ${IPA_FILE_PATH} (DEBUG MODE - without --fail)..."
-            echo "File size: $(ls -lh ${IPA_FILE_PATH} | awk '{print $5}')"
-  
-            # --fail オプションを削除してAPIからのエラー応答を表示させる
-            response=$(curl -s -w "\n%{http_code}" \
-                         -F "token=${DEPLOYGATE_API_KEY}" \
-                         -F "file=@${IPA_FILE_PATH}" \
-                         -F "message=${UPLOAD_MESSAGE}" \
-                         "https://deploygate.com/api/users/${DEPLOYGATE_USER_NAME}/apps")
-  
-            http_code=$(echo "$response" | tail -n1)
-            body=$(echo "$response" | sed '$d')
-  
-            echo "--- DeployGate API Response ---"
-            echo "Status Code: ${http_code}"
-            echo "Body:"
-            echo "${body}" # APIからのレスポンスボディをそのまま出力
-            echo "-------------------------------"
-  
-            # 失敗ステータスコードの場合、ジョブを失敗させる
-            if [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
-               echo "::error::DeployGate upload failed. See API response above."
-               exit 1
-            # レスポンスボディにエラーが含まれる場合も警告/エラーを出す (API仕様による)
-            elif echo "$body" | grep -q '"error": *true'; then
-               echo "::warning::DeployGate upload might have issues. API reported an error/warning. See response above."
-               # exit 1 # 必要に応じて失敗させる
-            fi
-  
-            echo "Upload attempt finished." # 成功/失敗に関わらずメッセージ変更
+      - name: Upload to DeployGate (iOS) using curl (DEBUG: Show API Error)
+        env:
+          DEPLOYGATE_API_KEY: ${{ secrets.DEPLOYGATE_API_KEY }}
+          DEPLOYGATE_USER_NAME: ${{ secrets.DEPLOYGATE_USER_NAME }}
+          IPA_FILE_PATH: ${{ env.IPA_PATH }}
+          UPLOAD_MESSAGE: "New iOS build from GitHub Actions (DEBUGGING)"
+        run: |
+          echo "Uploading ${IPA_FILE_PATH} (DEBUG MODE - without --fail)..."
+          echo "File size: $(ls -lh ${IPA_FILE_PATH} | awk '{print $5}')"
+
+          # --fail オプションを削除してAPIからのエラー応答を表示させる
+          response=$(curl -s -w "\n%{http_code}" \
+                        -F "token=${DEPLOYGATE_API_KEY}" \
+                        -F "file=@${IPA_FILE_PATH}" \
+                        -F "message=${UPLOAD_MESSAGE}" \
+                        "https://deploygate.com/api/users/${DEPLOYGATE_USER_NAME}/apps")
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "--- DeployGate API Response ---"
+          echo "Status Code: ${http_code}"
+          echo "Body:"
+          echo "${body}" # APIからのレスポンスボディをそのまま出力
+          echo "-------------------------------"
+
+          # 失敗ステータスコードの場合、ジョブを失敗させる
+          if [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
+              echo "::error::DeployGate upload failed. See API response above."
+              exit 1
+          # レスポンスボディにエラーが含まれる場合も警告/エラーを出す (API仕様による)
+          elif echo "$body" | grep -q '"error": *true'; then
+              echo "::warning::DeployGate upload might have issues. API reported an error/warning. See response above."
+              # exit 1 # 必要に応じて失敗させる
+          fi
+
+          echo "Upload attempt finished." # 成功/失敗に関わらずメッセージ変更
