@@ -225,7 +225,7 @@ jobs:
             exit 1
           fi
 
-      - name: Upload to DeployGate (iOS) using curl (DEBUG: Show API Error)
+      - name: Upload to DeployGate
         env:
           DEPLOYGATE_API_KEY: ${{ secrets.DEPLOYGATE_API_KEY }}
           DEPLOYGATE_USER_NAME: ${{ secrets.DEPLOYGATE_USER_NAME }}
