@@ -225,42 +225,23 @@ jobs:
             exit 1
           fi
 
+      - name: Install DeployGate CLI
+        run: |
+          curl -sSL https://deploygate.com/cli/install.sh | sh
+          echo "$HOME/.deploygate/bin" >> $GITHUB_PATH
+
       - name: Upload to DeployGate
         env:
           DEPLOYGATE_API_KEY: ${{ secrets.DEPLOYGATE_API_KEY }}
           DEPLOYGATE_USER_NAME: ${{ secrets.DEPLOYGATE_USER_NAME }}
           IPA_FILE_PATH: ${{ env.IPA_PATH }}
-          UPLOAD_MESSAGE: "New iOS build from GitHub Actions (DEBUGGING)"
-          DEPLOYGATE_APP_ID: ${{ secrets.DEPLOYGATE_APP_ID }}
+          UPLOAD_MESSAGE: "New iOS build from GitHub Actions"
         run: |
-          echo "Uploading ${IPA_FILE_PATH} (DEBUG MODE - without --fail)..."
+          echo "Uploading ${IPA_FILE_PATH} using dg command..."
           echo "File size: $(ls -lh ${IPA_FILE_PATH} | awk '{print $5}')"
 
-          response=$(curl -s -w "\n%{http_code}" \
-                        -F "token=${DEPLOYGATE_API_KEY}" \
-                        -F "file=@${IPA_FILE_PATH}" \
-                        -F "message=${UPLOAD_MESSAGE}" \
-                        -F "distribution_key=adhoc" \
-                        -F "app_id=${DEPLOYGATE_APP_ID}" \
-                        "https://deploygate.com/api/users/${DEPLOYGATE_USER_NAME}/apps")
-
-          http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | sed '$d')
-
-          echo "--- DeployGate API Response ---"
-          echo "Status Code: ${http_code}"
-          echo "Body:"
-          echo "${body}" # APIからのレスポンスボディをそのまま出力
-          echo "-------------------------------"
-
-          # 失敗ステータスコードの場合、ジョブを失敗させる
-          if [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
-              echo "::error::DeployGate upload failed. See API response above."
-              exit 1
-          # レスポンスボディにエラーが含まれる場合も警告/エラーを出す (API仕様による)
-          elif echo "$body" | grep -q '"error": *true'; then
-              echo "::warning::DeployGate upload might have issues. API reported an error/warning. See response above."
-              # exit 1 # 必要に応じて失敗させる
-          fi
-
-          echo "Upload attempt finished." # 成功/失敗に関わらずメッセージ変更
+          dg deploy "${IPA_FILE_PATH}" \
+            --api-token "${DEPLOYGATE_API_KEY}" \
+            --user "${DEPLOYGATE_USER_NAME}" \
+            --message "${UPLOAD_MESSAGE}" \
+            --distribution-key "adhoc"
