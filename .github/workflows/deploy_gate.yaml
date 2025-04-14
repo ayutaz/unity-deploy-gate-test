@@ -240,7 +240,7 @@ jobs:
                         -F "token=${DEPLOYGATE_API_KEY}" \
                         -F "file=@${IPA_FILE_PATH}" \
                         -F "message=${UPLOAD_MESSAGE}" \
-                        -F "type=ios" \
+                        -F "distribution_key=ios" \
                         "https://deploygate.com/api/users/${DEPLOYGATE_USER_NAME}/apps")
 
           http_code=$(echo "$response" | tail -n1)
