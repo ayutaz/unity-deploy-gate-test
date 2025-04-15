@@ -266,8 +266,7 @@ jobs:
           # dg コマンドを実行してアップロード
           dg deploy "${IPA_FILE_PATH}" \
             --user "${DEPLOYGATE_USER_NAME}" \
-            --message "${UPLOAD_MESSAGE}" \
-            --verbose
+            --message "${UPLOAD_MESSAGE}"
 
           # 終了コードを確認
           if [ $? -ne 0 ]; then
