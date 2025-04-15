@@ -231,44 +231,39 @@ jobs:
           echo "$HOME/.deploygate/bin" >> $GITHUB_PATH
           dg --version # インストール確認
 
-      - name: Upload to DeployGate using dg cli
-        env:
-          DEPLOYGATE_API_KEY: ${{ secrets.DEPLOYGATE_API_KEY }}
-          DEPLOYGATE_USER_NAME: ${{ secrets.DEPLOYGATE_USER_NAME }}
-          IPA_FILE_PATH: ${{ env.IPA_PATH }} # 前のステップで設定されたIPAパス
-          UPLOAD_MESSAGE: "New iOS build from GitHub Actions"
-        run: |
-          echo "Uploading ${IPA_FILE_PATH} to DeployGate for user ${DEPLOYGATE_USER_NAME}..."
-          echo "File size: $(ls -lh ${IPA_FILE_PATH} | awk '{print $5}')"
-
-          # APIキーの存在確認
-          if [ -z "$DEPLOYGATE_API_KEY" ]; then
-            echo "::error::DeployGate API key (DEPLOYGATE_API_KEY secret) is missing"
-            exit 1
-          fi
-          # ユーザー名の存在確認
-          if [ -z "$DEPLOYGATE_USER_NAME" ]; then
-            echo "::error::DeployGate user name (DEPLOYGATE_USER_NAME secret) is missing"
-            exit 1
-          fi
-          # IPAファイルの存在確認
-          if [ ! -f "${IPA_FILE_PATH}" ]; then
-            echo "::error::IPA file not found at ${IPA_FILE_PATH}"
-            exit 1
-          fi
-
-          # DeployGate CLIを使用してアップロード
-          # --user と --token を使用して認証情報を渡します
-          dg deploy "${IPA_FILE_PATH}" \
-            --user "${DEPLOYGATE_USER_NAME}" \
-            --token "${DEPLOYGATE_API_KEY}" \
-            --message "${UPLOAD_MESSAGE}" \
-            --verbose # 詳細なログを出力
-
-          # dgコマンドの終了コードを確認
-          if [ $? -ne 0 ]; then
-            echo "::error::Failed to upload to DeployGate using dg cli."
-            exit 1
-          fi
-
-          echo "Successfully uploaded to DeployGate."
+          - name: Upload to DeployGate using dg cli
+          env:
+            DEPLOYGATE_API_TOKEN: ${{ secrets.DEPLOYGATE_API_KEY }}
+            DEPLOYGATE_USER_NAME: ${{ secrets.DEPLOYGATE_USER_NAME }}
+            IPA_FILE_PATH: ${{ env.IPA_PATH }}
+            UPLOAD_MESSAGE: "New iOS build from GitHub Actions"
+          run: |
+            echo "Uploading ${IPA_FILE_PATH} to DeployGate for user ${DEPLOYGATE_USER_NAME}..."
+            echo "File size: $(ls -lh ${IPA_FILE_PATH} | awk '{print $5}')"
+  
+            if [ -z "$DEPLOYGATE_API_TOKEN" ]; then
+              echo "::error::DeployGate API key (DEPLOYGATE_API_KEY secret) is missing or not passed to DEPLOYGATE_API_TOKEN env var"
+              exit 1
+            fi
+            # ユーザー名の存在確認
+            if [ -z "$DEPLOYGATE_USER_NAME" ]; then
+              echo "::error::DeployGate user name (DEPLOYGATE_USER_NAME secret) is missing"
+              exit 1
+            fi
+            # IPAファイルの存在確認
+            if [ ! -f "${IPA_FILE_PATH}" ]; then
+              echo "::error::IPA file not found at ${IPA_FILE_PATH}"
+              exit 1
+            fi
+  
+            dg deploy "${IPA_FILE_PATH}" \
+              --user "${DEPLOYGATE_USER_NAME}" \
+              --message "${UPLOAD_MESSAGE}" \
+              --verbose # 詳細なログを出力
+  
+            if [ $? -ne 0 ]; then
+              echo "::error::Failed to upload to DeployGate using dg cli."
+              exit 1
+            fi
+  
+            echo "Successfully uploaded to DeployGate."
