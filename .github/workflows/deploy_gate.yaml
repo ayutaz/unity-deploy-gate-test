@@ -227,7 +227,7 @@ jobs:
 
       - name: Install DeployGate CLI
         run: |
-          curl -sSL https://deploygate.com/cli/install.sh | sh
+          curl -sSL https://deploygate.com/cli/install.sh | bash
           echo "$HOME/.deploygate/bin" >> $GITHUB_PATH
           dg --version # インストール確認
 
