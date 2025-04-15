@@ -229,20 +229,33 @@ jobs:
         run: |
           curl -sSL https://deploygate.com/cli/install.sh | sh
           echo "$HOME/.deploygate/bin" >> $GITHUB_PATH
-          mkdir -p ~/.deploygate
-          echo "api_token: ${{ secrets.DEPLOYGATE_API_KEY }}" > ~/.deploygate/config
-          echo "username: ${{ secrets.DEPLOYGATE_USER_NAME }}" >> ~/.deploygate/config
-          chmod 600 ~/.deploygate/config
+          dg --version
 
       - name: Upload to DeployGate
         env:
+          DEPLOYGATE_API_TOKEN: ${{ secrets.DEPLOYGATE_API_KEY }}
+          DEPLOYGATE_USER_NAME: ${{ secrets.DEPLOYGATE_USER_NAME }}
           IPA_FILE_PATH: ${{ env.IPA_PATH }}
           UPLOAD_MESSAGE: "New iOS build from GitHub Actions"
         run: |
           echo "Uploading ${IPA_FILE_PATH} using dg command..."
           echo "File size: $(ls -lh ${IPA_FILE_PATH} | awk '{print $5}')"
+          echo "Using DeployGate CLI version: $(dg --version)"
 
+          # 認証情報の確認
+          if [ -z "$DEPLOYGATE_API_TOKEN" ] || [ -z "$DEPLOYGATE_USER_NAME" ]; then
+            echo "::error::DeployGate authentication information is missing"
+            exit 1
+          fi
+
+          # アップロード実行
           dg deploy "${IPA_FILE_PATH}" \
             --message "${UPLOAD_MESSAGE}" \
             --distribution-key "adhoc" \
             --no-interaction
+
+          # エラーチェック
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to upload to DeployGate"
+            exit 1
+          fi
