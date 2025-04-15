@@ -241,7 +241,7 @@ jobs:
           echo "File size: $(ls -lh ${IPA_FILE_PATH} | awk '{print $5}')"
 
           dg deploy "${IPA_FILE_PATH}" \
-            --api-token "${DEPLOYGATE_API_KEY}" \
+            --token "${DEPLOYGATE_API_KEY}" \
             --user "${DEPLOYGATE_USER_NAME}" \
             --message "${UPLOAD_MESSAGE}" \
             --distribution-key "adhoc"
