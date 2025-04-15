@@ -248,14 +248,22 @@ jobs:
           fi
 
           # アップロード実行
-          curl -f \
+          response=$(curl -s -w "\n%{http_code}" \
             -F "token=${DEPLOYGATE_API_KEY}" \
             -F "file=@${IPA_FILE_PATH}" \
             -F "message=${UPLOAD_MESSAGE}" \
-            "https://deploygate.com/api/users/${DEPLOYGATE_USER_NAME}/apps"
+            "https://deploygate.com/api/users/${DEPLOYGATE_USER_NAME}/apps")
 
-          # エラーチェック
-          if [ $? -ne 0 ]; then
-            echo "::error::Failed to upload to DeployGate"
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "--- DeployGate API Response ---"
+          echo "Status Code: ${http_code}"
+          echo "Body: ${body}"
+          echo "-------------------------------"
+
+          if [ "$http_code" -ne 200 ]; then
+            echo "::error::Failed to upload to DeployGate. Status code: ${http_code}"
+            echo "::error::Response body: ${body}"
             exit 1
           fi
