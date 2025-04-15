@@ -225,45 +225,54 @@ jobs:
             exit 1
           fi
 
-      - name: Install DeployGate CLI
+      - name: Install DeployGate CLI using RubyGems
         run: |
-          curl -sSL https://deploygate.com/cli/install.sh | bash
-          echo "$HOME/.deploygate/bin" >> $GITHUB_PATH
-          dg --version # インストール確認
+          echo "Attempting to install DeployGate CLI using RubyGems..."
+          # RubyGems を使って deploygate gem をインストール (--verbose で詳細ログ表示)
+          gem install deploygate --no-document --verbose
 
-          - name: Upload to DeployGate using dg cli
-          env:
-            DEPLOYGATE_API_TOKEN: ${{ secrets.DEPLOYGATE_API_KEY }}
-            DEPLOYGATE_USER_NAME: ${{ secrets.DEPLOYGATE_USER_NAME }}
-            IPA_FILE_PATH: ${{ env.IPA_PATH }}
-            UPLOAD_MESSAGE: "New iOS build from GitHub Actions"
-          run: |
-            echo "Uploading ${IPA_FILE_PATH} to DeployGate for user ${DEPLOYGATE_USER_NAME}..."
-            echo "File size: $(ls -lh ${IPA_FILE_PATH} | awk '{print $5}')"
-  
-            if [ -z "$DEPLOYGATE_API_TOKEN" ]; then
-              echo "::error::DeployGate API key (DEPLOYGATE_API_KEY secret) is missing or not passed to DEPLOYGATE_API_TOKEN env var"
-              exit 1
-            fi
-            # ユーザー名の存在確認
-            if [ -z "$DEPLOYGATE_USER_NAME" ]; then
-              echo "::error::DeployGate user name (DEPLOYGATE_USER_NAME secret) is missing"
-              exit 1
-            fi
-            # IPAファイルの存在確認
-            if [ ! -f "${IPA_FILE_PATH}" ]; then
-              echo "::error::IPA file not found at ${IPA_FILE_PATH}"
-              exit 1
-            fi
-  
-            dg deploy "${IPA_FILE_PATH}" \
-              --user "${DEPLOYGATE_USER_NAME}" \
-              --message "${UPLOAD_MESSAGE}" \
-              --verbose # 詳細なログを出力
-  
-            if [ $? -ne 0 ]; then
-              echo "::error::Failed to upload to DeployGate using dg cli."
-              exit 1
-            fi
-  
-            echo "Successfully uploaded to DeployGate."
+          GEM_BIN_PATH=$(gem environment gemdir)/bin
+          echo "Adding GEM_BIN_PATH to GITHUB_PATH: ${GEM_BIN_PATH}"
+          echo "${GEM_BIN_PATH}" >> $GITHUB_PATH
+
+          # インストールとパス設定を確認
+          which dg || (echo "::error::'dg' command not found after installation." && exit 1)
+          dg --version
+
+      - name: Upload to DeployGate using dg cli
+        env:
+          DEPLOYGATE_API_TOKEN: ${{ secrets.DEPLOYGATE_API_KEY }}
+          DEPLOYGATE_USER_NAME: ${{ secrets.DEPLOYGATE_USER_NAME }}
+          IPA_FILE_PATH: ${{ env.IPA_PATH }}
+          UPLOAD_MESSAGE: "New iOS build from GitHub Actions"
+        run: |
+          echo "Uploading ${IPA_FILE_PATH} to DeployGate for user ${DEPLOYGATE_USER_NAME}..."
+          echo "File size: $(ls -lh ${IPA_FILE_PATH} | awk '{print $5}')"
+
+          # 環境変数のチェック
+          if [ -z "$DEPLOYGATE_API_TOKEN" ]; then
+            echo "::error::DeployGate API key (DEPLOYGATE_API_KEY secret) is missing or not passed to DEPLOYGATE_API_TOKEN env var"
+            exit 1
+          fi
+          if [ -z "$DEPLOYGATE_USER_NAME" ]; then
+            echo "::error::DeployGate user name (DEPLOYGATE_USER_NAME secret) is missing"
+            exit 1
+          fi
+          if [ ! -f "${IPA_FILE_PATH}" ]; then
+            echo "::error::IPA file not found at ${IPA_FILE_PATH}"
+            exit 1
+          fi
+
+          # dg コマンドを実行してアップロード
+          dg deploy "${IPA_FILE_PATH}" \
+            --user "${DEPLOYGATE_USER_NAME}" \
+            --message "${UPLOAD_MESSAGE}" \
+            --verbose
+
+          # 終了コードを確認
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to upload to DeployGate using dg cli."
+            exit 1
+          fi
+
+          echo "Successfully uploaded to DeployGate."
