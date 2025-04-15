@@ -232,7 +232,7 @@ jobs:
 
       - name: Upload to DeployGate
         env:
-          DEPLOYGATE_API_KEY: ${{ secrets.DEPLOYGATE_API_KEY }}
+          DEPLOYGATE_API_TOKEN: ${{ secrets.DEPLOYGATE_API_KEY }}
           DEPLOYGATE_USER_NAME: ${{ secrets.DEPLOYGATE_USER_NAME }}
           IPA_FILE_PATH: ${{ env.IPA_PATH }}
           UPLOAD_MESSAGE: "New iOS build from GitHub Actions"
@@ -241,7 +241,6 @@ jobs:
           echo "File size: $(ls -lh ${IPA_FILE_PATH} | awk '{print $5}')"
 
           dg deploy "${IPA_FILE_PATH}" \
-            --token "${DEPLOYGATE_API_KEY}" \
             --user "${DEPLOYGATE_USER_NAME}" \
             --message "${UPLOAD_MESSAGE}" \
             --distribution-key "adhoc"
