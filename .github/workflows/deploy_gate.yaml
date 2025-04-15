@@ -229,41 +229,46 @@ jobs:
         run: |
           curl -sSL https://deploygate.com/cli/install.sh | sh
           echo "$HOME/.deploygate/bin" >> $GITHUB_PATH
-          dg --version
+          dg --version # インストール確認
 
-      - name: Upload to DeployGate
+      - name: Upload to DeployGate using dg cli
         env:
           DEPLOYGATE_API_KEY: ${{ secrets.DEPLOYGATE_API_KEY }}
           DEPLOYGATE_USER_NAME: ${{ secrets.DEPLOYGATE_USER_NAME }}
-          IPA_FILE_PATH: ${{ env.IPA_PATH }}
+          IPA_FILE_PATH: ${{ env.IPA_PATH }} # 前のステップで設定されたIPAパス
           UPLOAD_MESSAGE: "New iOS build from GitHub Actions"
         run: |
-          echo "Uploading ${IPA_FILE_PATH} to DeployGate..."
+          echo "Uploading ${IPA_FILE_PATH} to DeployGate for user ${DEPLOYGATE_USER_NAME}..."
           echo "File size: $(ls -lh ${IPA_FILE_PATH} | awk '{print $5}')"
 
-          # 認証情報の確認
-          if [ -z "$DEPLOYGATE_API_KEY" ] || [ -z "$DEPLOYGATE_USER_NAME" ]; then
-            echo "::error::DeployGate authentication information is missing"
+          # APIキーの存在確認
+          if [ -z "$DEPLOYGATE_API_KEY" ]; then
+            echo "::error::DeployGate API key (DEPLOYGATE_API_KEY secret) is missing"
+            exit 1
+          fi
+          # ユーザー名の存在確認
+          if [ -z "$DEPLOYGATE_USER_NAME" ]; then
+            echo "::error::DeployGate user name (DEPLOYGATE_USER_NAME secret) is missing"
+            exit 1
+          fi
+          # IPAファイルの存在確認
+          if [ ! -f "${IPA_FILE_PATH}" ]; then
+            echo "::error::IPA file not found at ${IPA_FILE_PATH}"
             exit 1
           fi
 
-          # アップロード実行
-          response=$(curl -s -w "\n%{http_code}" \
-            -F "token=${DEPLOYGATE_API_KEY}" \
-            -F "file=@${IPA_FILE_PATH}" \
-            -F "message=${UPLOAD_MESSAGE}" \
-            "https://deploygate.com/api/users/${DEPLOYGATE_USER_NAME}/apps")
+          # DeployGate CLIを使用してアップロード
+          # --user と --token を使用して認証情報を渡します
+          dg deploy "${IPA_FILE_PATH}" \
+            --user "${DEPLOYGATE_USER_NAME}" \
+            --token "${DEPLOYGATE_API_KEY}" \
+            --message "${UPLOAD_MESSAGE}" \
+            --verbose # 詳細なログを出力
 
-          http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | sed '$d')
-
-          echo "--- DeployGate API Response ---"
-          echo "Status Code: ${http_code}"
-          echo "Body: ${body}"
-          echo "-------------------------------"
-
-          if [ "$http_code" -ne 200 ]; then
-            echo "::error::Failed to upload to DeployGate. Status code: ${http_code}"
-            echo "::error::Response body: ${body}"
+          # dgコマンドの終了コードを確認
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to upload to DeployGate using dg cli."
             exit 1
           fi
+
+          echo "Successfully uploaded to DeployGate."
