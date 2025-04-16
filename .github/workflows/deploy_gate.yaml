@@ -225,10 +225,54 @@ jobs:
             exit 1
           fi
 
-      - name: Upload to DeployGate (iOS)
-        uses: DeployGate/deploygate-upload-github-action@v1.0.1
-        with:
-          api_token: ${{ secrets.DEPLOYGATE_API_KEY }}
-          owner_name: ${{ secrets.DEPLOYGATE_USER_NAME }}
-          file_path: ${{ env.IPA_PATH }}
-          message: "New iOS build from GitHub Actions (via deploygate-upload-github-action)"
+      - name: Upload to DeployGate using curl (iOS)
+        env:
+          # DeployGate APIトークンをGitHub Secretsから取得 [1, 2]
+          DEPLOYGATE_API_TOKEN: ${{ secrets.DEPLOYGATE_API_KEY }}
+          # DeployGateのオーナー名（ユーザー名または組織名）をSecretsから取得 [1, 2]
+          DEPLOYGATE_OWNER_NAME: ${{ secrets.DEPLOYGATE_USER_NAME }}
+          # 前のステップで生成されたIPAファイルのパスを使用
+          IPA_FILE_PATH: ${{ env.IPA_PATH }}
+          # GitHub Actionsのコンテキストを利用したメッセージ [1]
+          UPLOAD_MESSAGE: "iOS Build ${{ github.run_number }} (${{ github.sha }}) via curl"
+          # 現在のブランチ名を配布ページ名として使用 [1]
+          DISTRIBUTION_NAME: ${{ github.ref_name }}
+        run: |
+          echo "Uploading ${IPA_FILE_PATH} to DeployGate for owner ${DEPLOYGATE_OWNER_NAME}..."
+          echo "File size: $(ls -lh ${IPA_FILE_PATH} | awk '{print $5}')"
+
+          # 必須情報のチェック
+          if; then
+            echo "::error::DeployGate API key (DEPLOYGATE_API_KEY secret) is missing."
+            exit 1
+          fi
+          if; then
+            echo "::error::DeployGate owner name (DEPLOYGATE_USER_NAME secret) is missing."
+            exit 1
+          fi
+          if; then
+            echo "::error::IPA file not found at ${IPA_FILE_PATH}"
+            exit 1
+          fi
+
+          # curlコマンドの実行 [3, 1]
+          curl --fail -X POST \
+            "https://deploygate.com/api/users/${DEPLOYGATE_OWNER_NAME}/apps" \
+            -H "Authorization: Bearer ${DEPLOYGATE_API_TOKEN}" \
+            -F "file=@${IPA_FILE_PATH}" \
+            --form-string "message=${UPLOAD_MESSAGE}" \
+            --form-string "distribution_name=${DISTRIBUTION_NAME}" \
+            --form-string "release_note=Triggered by commit ${{ github.sha }} on branch ${DISTRIBUTION_NAME}" \
+            -o deploygate_response.json # レスポンスをファイルに保存 [3]
+
+          # レスポンス内容をログに出力
+          echo "DeployGate API Response:"
+          cat deploygate_response.json
+
+          # レスポンスJSON内にエラーが含まれていないか確認（より堅牢なエラーチェック） [3, 1]
+          if grep -q '"error": *true' deploygate_response.json; then
+            echo "::error::Error detected in DeployGate response."
+            exit 1
+          fi
+
+          echo "Upload successful."
