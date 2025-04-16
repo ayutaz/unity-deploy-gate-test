@@ -242,15 +242,15 @@ jobs:
           echo "File size: $(ls -lh ${IPA_FILE_PATH} | awk '{print $5}')"
 
           # 必須情報のチェック (修正: 正しい if 文構文を使用)
-          if; then
+          if [ -z "${DEPLOYGATE_API_TOKEN}" ]; then
             echo "::error::DeployGate API key (DEPLOYGATE_API_KEY secret) is missing."
             exit 1
           fi
-          if; then
+          if [ -z "${DEPLOYGATE_OWNER_NAME}" ]; then
             echo "::error::DeployGate owner name (DEPLOYGATE_USER_NAME secret) is missing."
             exit 1
           fi
-          if; then
+          if [ ! -f "${IPA_FILE_PATH}" ]; then
             echo "::error::IPA file not found at ${IPA_FILE_PATH}"
             exit 1
           fi
@@ -274,7 +274,7 @@ jobs:
           if [ -f deploygate_response.json ] && grep -q '"error": *true' deploygate_response.json; then
             echo "::error::Error detected in DeployGate response."
             exit 1
-          elif [! -f deploygate_response.json ]; then
+          elif [ ! -f deploygate_response.json ]; then
              echo "::error::DeployGate response file not found."
              exit 1
           fi
