@@ -234,7 +234,7 @@ jobs:
           # 前のステップで生成されたIPAファイルのパスを使用
           IPA_FILE_PATH: ${{ env.IPA_PATH }}
           # GitHub Actionsのコンテキストを利用したメッセージ [1]
-          UPLOAD_MESSAGE: "iOS Build ${{ github.run_number }} (${{ github.sha }}) via curl"
+          UPLOAD_MESSAGE: "Test upload from GitHub Actions"
           # 現在のブランチ名を配布ページ名として使用 [1]
           DISTRIBUTION_NAME: ${{ github.ref_name }}
         run: |
@@ -264,9 +264,9 @@ jobs:
             "https://deploygate.com/api/users/${DEPLOYGATE_OWNER_NAME}/apps" \
             -H "Authorization: Bearer ${DEPLOYGATE_API_TOKEN}" \
             -F "file=@${IPA_FILE_PATH}" \
-            --form-string "message=${UPLOAD_MESSAGE}" \
+            --form-string "message=Test upload from GitHub Actions" \
             --form-string "distribution_name=${SANITIZED_DISTRIBUTION_NAME}" \
-            --form-string "release_note=Triggered by commit ${{ github.sha }} on branch ${DISTRIBUTION_NAME}" \
+            --form-string "release_note=Test release note" \
             -o deploygate_response.json # レスポンスをファイルに保存 [3]
 
           # レスポンス内容をログに出力
