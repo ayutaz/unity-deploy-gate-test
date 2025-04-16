@@ -241,6 +241,10 @@ jobs:
           echo "Uploading ${IPA_FILE_PATH} to DeployGate for owner ${DEPLOYGATE_OWNER_NAME}..."
           echo "File size: $(ls -lh ${IPA_FILE_PATH} | awk '{print $5}')"
 
+          # distribution_name 用にブランチ名をサニタイズ (スラッシュをアンダースコアに置換)
+          SANITIZED_DISTRIBUTION_NAME=$(echo "${DISTRIBUTION_NAME}" | sed 's|/|_|g')
+          echo "Sanitized distribution name: ${SANITIZED_DISTRIBUTION_NAME}"
+
           # 必須情報のチェック (修正: 正しい if 文構文を使用)
           if [ -z "${DEPLOYGATE_API_TOKEN}" ]; then
             echo "::error::DeployGate API key (DEPLOYGATE_API_KEY secret) is missing."
@@ -261,7 +265,7 @@ jobs:
             -H "Authorization: Bearer ${DEPLOYGATE_API_TOKEN}" \
             -F "file=@${IPA_FILE_PATH}" \
             --form-string "message=${UPLOAD_MESSAGE}" \
-            --form-string "distribution_name=${DISTRIBUTION_NAME}" \
+            --form-string "distribution_name=${SANITIZED_DISTRIBUTION_NAME}" \
             --form-string "release_note=Triggered by commit ${{ github.sha }} on branch ${DISTRIBUTION_NAME}" \
             -o deploygate_response.json # レスポンスをファイルに保存 [3]
 
