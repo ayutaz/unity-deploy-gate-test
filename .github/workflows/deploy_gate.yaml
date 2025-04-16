@@ -241,7 +241,7 @@ jobs:
           echo "Uploading ${IPA_FILE_PATH} to DeployGate for owner ${DEPLOYGATE_OWNER_NAME}..."
           echo "File size: $(ls -lh ${IPA_FILE_PATH} | awk '{print $5}')"
 
-          # 必須情報のチェック
+          # 必須情報のチェック (修正: 正しい if 文構文を使用)
           if; then
             echo "::error::DeployGate API key (DEPLOYGATE_API_KEY secret) is missing."
             exit 1
@@ -255,7 +255,7 @@ jobs:
             exit 1
           fi
 
-          # curlコマンドの実行 [3, 1]
+          # curlコマンドの実行 [1, 3]
           curl --fail -X POST \
             "https://deploygate.com/api/users/${DEPLOYGATE_OWNER_NAME}/apps" \
             -H "Authorization: Bearer ${DEPLOYGATE_API_TOKEN}" \
@@ -269,10 +269,14 @@ jobs:
           echo "DeployGate API Response:"
           cat deploygate_response.json
 
-          # レスポンスJSON内にエラーが含まれていないか確認（より堅牢なエラーチェック） [3, 1]
-          if grep -q '"error": *true' deploygate_response.json; then
+          # レスポンスJSON内にエラーが含まれていないか確認（より堅牢なエラーチェック） [1, 4]
+          # (修正: 正しい if 文構文を使用し、ファイル存在確認を追加)
+          if [ -f deploygate_response.json ] && grep -q '"error": *true' deploygate_response.json; then
             echo "::error::Error detected in DeployGate response."
             exit 1
+          elif [! -f deploygate_response.json ]; then
+             echo "::error::DeployGate response file not found."
+             exit 1
           fi
 
           echo "Upload successful."
