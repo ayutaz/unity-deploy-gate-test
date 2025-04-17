@@ -264,14 +264,14 @@ jobs:
             "https://deploygate.com/api/users/${DEPLOYGATE_OWNER_NAME}/apps" \
             -H "Authorization: Bearer ${DEPLOYGATE_API_TOKEN}" \
             -F "file=@${IPA_FILE_PATH}" \
-            --form-string "message=Test upload from GitHub Actions" \
-            --form-string "distribution_name=${SANITIZED_DISTRIBUTION_NAME}" \
-            --form-string "release_note=Test release note" \
+            -F "message=Test upload from GitHub Actions" \
+            -F "distribution_name=${SANITIZED_DISTRIBUTION_NAME}" \
+            -F "release_note=Test release note" \
             -o deploygate_response.json # レスポンスをファイルに保存 [3]
 
-          # レスポンス内容をログに出力
+          # レスポンス内容をログに出力 (エラー時も表示する)
           echo "DeployGate API Response:"
-          cat deploygate_response.json
+          cat deploygate_response.json || echo "Failed to read deploygate_response.json"
 
           # レスポンスJSON内にエラーが含まれていないか確認（より堅牢なエラーチェック） [1, 4]
           # (修正: 正しい if 文構文を使用し、ファイル存在確認を追加)
